@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Slot, useRouter, useSegments, Redirect } from "expo-router";
 import "react-native-reanimated";
 import supabase from "@/utils/supabase";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const [session, setSession] = useState<string | null>(null);
@@ -29,5 +30,9 @@ export default function RootLayout() {
     return <Redirect href="/" />;
   }
 
-  return <Slot />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Slot />
+    </GestureHandlerRootView>
+  );
 }

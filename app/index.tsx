@@ -22,7 +22,7 @@ function Page() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       if (error) {
@@ -38,16 +38,22 @@ function Page() {
     try {
       const {
         error,
-        data: { session },
+        data: { session, user },
       } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
       });
+
       if (error) {
-        Alert.alert("Error signing up ", error.message);
+        Alert.alert("Error signing up", error.message);
+        return;
       }
-      if (!session) {
-        Alert.alert("Session not found");
+
+      if (!session && user) {
+        Alert.alert(
+          "Check your inbox",
+          "Please check your email for the confirmation link.",
+        );
       }
     } finally {
       setLoading(false);
@@ -67,6 +73,9 @@ function Page() {
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        autoCorrect={false}
       />
       <TextInput
         style={styles.input}
@@ -74,6 +83,7 @@ function Page() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        autoCapitalize="none"
       />
 
       <Pressable
