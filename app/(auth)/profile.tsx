@@ -2,11 +2,38 @@ import { View, Text, Image, Button, StyleSheet, Alert } from "react-native";
 import React from "react";
 import * as imagePicker from "expo-image-picker";
 import supabase from "@/utils/supabase";
-import * as FileSystem from "expo-file-system";
-import { decode } from "base64-arraybuffer";
+
 export default function Page() {
   const [image, setImage] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    loadUserAvatar();
+  }, []);
+
+  const loadUserAvatar = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(`${user.id}/avatar.jpg`);
+
+      if (data?.publicUrl) {
+        // Only set the image if it actually exists or after a successful upload
+        // We can check if it exists by doing a quick HEAD request or just trying to load it
+        const checkRes = await fetch(data.publicUrl, { method: "HEAD" });
+        if (checkRes.ok) {
+          setImage(`${data.publicUrl}?t=${new Date().getTime()}`);
+        }
+      }
+    } catch (error: any) {
+      console.log("Error loading avatar:", error.message);
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -33,22 +60,26 @@ export default function Page() {
         return;
       }
 
-      const base64 = await FileSystem.readAsStringAsync(img.uri, {
-        encoding: "base64",
-      });
+      const formData = new FormData();
+      formData.append("file", {
+        uri: img.uri,
+        name: "avatar.jpg",
+        type: img.mimeType || "image/jpeg",
+      } as any);
 
       const filePath = `${user.id}/avatar.jpg`;
-      const contentType = img.mimeType || "image/jpeg";
       const { error } = await supabase.storage
         .from("avatars")
-        .upload(filePath, decode(base64), {
-          contentType,
+        .upload(filePath, formData, {
+          contentType: img.mimeType || "image/jpeg",
           upsert: true,
         });
+
       if (error) {
         Alert.alert("Error", "Could not upload image: " + error.message);
       } else {
         Alert.alert("Success", "Image uploaded successfully!");
+        loadUserAvatar();
       }
     } catch (error: any) {
       Alert.alert("Error", "Could not pick image: " + error.message);
