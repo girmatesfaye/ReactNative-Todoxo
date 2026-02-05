@@ -23,7 +23,7 @@ export default function Page() {
         .getPublicUrl(`${user.id}/avatar.jpg`);
 
       if (data?.publicUrl) {
-        // Only set the image if it actually exists or after a successful upload
+        // Only set the image if it actually exists or after a successful upload to avoid showing broken images.
         // We can check if it exists by doing a quick HEAD request or just trying to load it
         const checkRes = await fetch(data.publicUrl, { method: "HEAD" });
         if (checkRes.ok) {
